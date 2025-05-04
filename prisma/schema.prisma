@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(USER)
+  orders    Order[]
+  reviews   Review[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@map("users")
+}
+
+model Product {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  categories    Category   @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  reviews     Review[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  order_products      OrderProduct[]
+  @@map("products")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@map("categories")
+}
+
+model Order {
+  id         Int              @id @default(autoincrement())
+  users       User             @relation(fields: [userId], references: [id])
+  userId     Int
+  totalPrice Float
+  status     OrderStatus      @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  products   OrderProduct[]
+  payment    Payment?
+  @@map("orders")
+}
+
+model OrderProduct {
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   Int
+  products   Product  @relation(fields: [productId], references: [id])
+  productId Int
+  quantity  Int      @default(1)
+  @@map("order_products")
+}
+
+model Payment {
+  id         Int       @id @default(autoincrement())
+  orders      Order     @relation(fields: [orderId], references: [id])
+  orderId    Int       @unique
+  amount     Float
+  method     PaymentMethod
+  createdAt  DateTime  @default(now())
+  @@map("payments")
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  users       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  products    Product  @relation(fields: [productId], references: [id])
+  productId  Int
+  rating     Int      @default(5)
+  comment    String?
+  createdAt  DateTime @default(now())
+  @@map("reviews")
+}
+
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+}
